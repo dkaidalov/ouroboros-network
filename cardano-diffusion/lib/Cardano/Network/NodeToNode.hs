@@ -8,6 +8,10 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
 
+#ifndef PQ_MAX_HEADER_BYTES
+#define PQ_MAX_HEADER_BYTES 1400
+#endif
+
 -- | This is the starting point for a module that will bring together the
 -- overall node to node protocol, as a collection of mini-protocols.
 --
@@ -341,8 +345,14 @@ chainSyncProtocolLimits MiniProtocolParameters { chainSyncPipeliningHighMark } =
       -- consists of a BlockHeader.
       -- TODO: 1400 comes from maxBlockHeaderSize in genesis, but should come
       -- from consensus rather than being hard coded.
+      --
+      -- For the post-quantum header experiments the per-header allowance can
+      -- be raised at compile time with @-DPQ_MAX_HEADER_BYTES=n@ (set from a
+      -- cabal.project stanza on this package). Headers larger than roughly
+      -- this value tear down the bearer with 'IngressQueueOverRun' once the
+      -- ChainSync pipeline is full.
       maximumIngressQueue = addSafetyMargin $
-        fromIntegral chainSyncPipeliningHighMark * 1400
+        fromIntegral chainSyncPipeliningHighMark * PQ_MAX_HEADER_BYTES
     }
 
 blockFetchProtocolLimits MiniProtocolParameters { blockFetchPipeliningMax } = MiniProtocolLimits {
